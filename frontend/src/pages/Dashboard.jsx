@@ -1,5 +1,6 @@
 import React from 'react';
 import KanbanBoard from '../components/KanbanBoard';
+import '../styles/Dashboard.css';
 
 const Dashboard = () => {
   return (

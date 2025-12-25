@@ -361,3 +361,21 @@
   0%, 80%, 100% { transform: translateY(0); }
   40% { transform: translateY(-5px); }
 }
+.online-users {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 18px;
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.online-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+}
+

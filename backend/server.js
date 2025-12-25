@@ -22,7 +22,7 @@ const server = createServer(app);
 // Enhanced CORS configuration
 const corsOptions = {
   origin: [
-    'https://todo-board-1.vercel.app',
+    'https://task-manager-portal-zxpw.vercel.app/',
     'http://localhost:3000', // For local development
     'http://localhost:5173'  // For Vite dev server
   ],
@@ -49,6 +49,7 @@ app.options('*', cors(corsOptions));
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
+    'https://task-manager-portal-zxpw.vercel.app/',
     'https://todo-board-1.vercel.app',
     'https://todoboard-1-nvnk.onrender.com'
     

@@ -92,23 +92,23 @@ const KanbanBoard = () => {
     }
   }, []);
   // Add this useEffect hook to your component
-useEffect(() => {
-  if (!socket) return;
+  useEffect(() => {
+    if (!socket) return;
 
-  const handleTaskUpdated = (updatedTask) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task._id === updatedTask._id ? updatedTask : task
-      )
-    );
-  };
+    const handleTaskUpdated = (updatedTask) => {
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === updatedTask._id ? updatedTask : task
+        )
+      );
+    };
 
-  socket.on('task_updated', handleTaskUpdated);
+    socket.on('task_updated', handleTaskUpdated);
 
-  return () => {
-    socket.off('task_updated', handleTaskUpdated);
-  };
-}, [socket]);
+    return () => {
+      socket.off('task_updated', handleTaskUpdated);
+    };
+  }, [socket]);
 
   // Refresh handler (API + socket)
   const handleRefresh = useCallback(() => {
@@ -247,46 +247,46 @@ useEffect(() => {
     handleTyping(false);
   };
 
-const handleSaveTask = async (taskData) => {
-  try {
-    if (editingTask._id) {
-      // Update existing task
-      const result = await updateTaskAPI(editingTask._id, taskData);
+  const handleSaveTask = async (taskData) => {
+    try {
+      if (editingTask._id) {
+        // Update existing task
+        const result = await updateTaskAPI(editingTask._id, taskData);
 
-      // Handle conflict response
-      if (result?.conflict) {
-        setConflictData({
-          local: { ...taskData, _id: editingTask._id },
-          server: result.serverData
-        });
-        setShowConflictModal(true);
-        return;
+        // Handle conflict response
+        if (result?.conflict) {
+          setConflictData({
+            local: { ...taskData, _id: editingTask._id },
+            server: result.serverData
+          });
+          setShowConflictModal(true);
+          return;
+        }
+
+        const updatedTask = result.data;
+
+        // Update socket if available
+        if (socket) {
+          updateTaskSocket(editingTask._id, taskData);
+        }
+      } else {
+        // Create new task
+        const status = editingTask.status || 'todo';
+        const newTask = await createTaskAPI({ ...taskData, status });
+
+        // Update socket if available
+        if (socket) {
+          createTaskSocket({ ...taskData, status });
+        }
       }
 
-      const updatedTask = result.data;
-      
-      // Update socket if available
-      if (socket) {
-        updateTaskSocket(editingTask._id, taskData);
-      }
-    } else {
-      // Create new task
-      const status = editingTask.status || 'todo';
-      const newTask = await createTaskAPI({ ...taskData, status });
-
-      // Update socket if available
-      if (socket) {
-        createTaskSocket({ ...taskData, status });
-      }
+      // Close modal after successful operation
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      // Don't close modal on error
     }
-    
-    // Close modal after successful operation
-    handleCloseModal();
-  } catch (error) {
-    console.error('Error saving task:', error);
-    // Don't close modal on error
-  }
-};
+  };
   // Delete task handler
   const handleDeleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
@@ -440,45 +440,45 @@ const handleSaveTask = async (taskData) => {
     }
   }, [socket, setTasks]);
 
- const handleConflictResolve = async (resolution) => {
-  try {
-    const { action, data } = resolution;
-    
-    if (action === 'discard') {
-      // Just update local state with server version
-      setTasks(prev => prev.map(task => 
-        task._id === data._id ? data : task
-      ));
-    } else {
-      // For overwrite or merge, send to server
-      const response = await updateTask(data._id, data);
-      
-      if (response?.conflict) {
-        // If we get another conflict, show it
-        setConflictData({
-          local: data,
-          server: response.serverData
-        });
-        return;
+  const handleConflictResolve = async (resolution) => {
+    try {
+      const { action, data } = resolution;
+
+      if (action === 'discard') {
+        // Just update local state with server version
+        setTasks(prev => prev.map(task =>
+          task._id === data._id ? data : task
+        ));
+      } else {
+        // For overwrite or merge, send to server
+        const response = await updateTask(data._id, data);
+
+        if (response?.conflict) {
+          // If we get another conflict, show it
+          setConflictData({
+            local: data,
+            server: response.serverData
+          });
+          return;
+        }
+
+        const updatedTask = response.data;
+        setTasks(prev => prev.map(task =>
+          task._id === updatedTask._id ? updatedTask : task
+        ));
+
+        if (socket) {
+          updateTaskSocket(updatedTask._id, updatedTask);
+        }
       }
 
-      const updatedTask = response.data;
-      setTasks(prev => prev.map(task => 
-        task._id === updatedTask._id ? updatedTask : task
-      ));
-
-      if (socket) {
-        updateTaskSocket(updatedTask._id, updatedTask);
-      }
+      setShowConflictModal(false);
+      setConflictData(null);
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error resolving conflict:', error);
     }
-    
-    setShowConflictModal(false);
-    setConflictData(null);
-    handleCloseModal();
-  } catch (error) {
-    console.error('Error resolving conflict:', error);
-  }
-};
+  };
 
   // UI Loading & error states
   if (loading && activeTasks.length === 0) {
@@ -515,33 +515,42 @@ const handleSaveTask = async (taskData) => {
       />
 
       <div className="kanban-header">
-        <h1>Task Board</h1>
-        <div className="header-actions">
-          <OnlineUsers users={onlineUsers} typingUsers={typingUsers} allUsers={users} />
-          <button
-            className={`btn btn-secondary ${showActivityPanel ? 'active' : ''}`}
-            onClick={toggleActivityPanel}
-          >
-            {showActivityPanel ? 'Hide Activity' : 'Show Activity'}
-          </button>
-                    <button
-            className="btn btn-secondary"
-            onClick={handleRefresh}
-            title={`Last refreshed: ${lastRefresh.toLocaleTimeString()}`}
-          >
-            <i className="refresh-icon">⟳</i> Refresh
-          </button>
-          <button className="btn btn-primary" onClick={() => handleCreateTask()}>
-            + Add New Task
-          </button>
-          <button className="btn btn-secondary" onClick={testNotification}>
-            Test Notification
-          </button>
-          <button className="btn btn-secondary logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      </div>
+  
+  <h1 className="board-title">TaskManagementPortal</h1>
+
+  <div className="header-actions">
+
+    <OnlineUsers
+      users={onlineUsers}
+      typingUsers={typingUsers}
+      allUsers={users}
+    />
+
+    <button
+      className={`btn btn-secondary ${showActivityPanel ? 'active' : ''}`}
+      onClick={toggleActivityPanel}
+    >
+      Activity
+    </button>
+
+    <button
+      className="btn btn-primary"
+      onClick={() => handleCreateTask()}
+    >
+      + Task
+    </button>
+
+    <button
+      className="btn btn-danger-outline"
+      onClick={handleLogout}
+    >
+      Logout
+    </button>
+
+  </div>
+</div>
+
+
 
       <div className="kanban-main-content">
         <div className="kanban-board-section">
@@ -603,18 +612,18 @@ const handleSaveTask = async (taskData) => {
       )}
 
       {showConflictModal && conflictData && (
-  <ConflictModal
-    isOpen={showConflictModal}
-    localTask={conflictData.local}
-    serverTask={conflictData.server}
-    onResolve={handleConflictResolve}
-    onClose={() => {
-      setShowConflictModal(false);
-      setConflictData(null);
-      handleCloseModal();
-    }}
-  />
-)}
+        <ConflictModal
+          isOpen={showConflictModal}
+          localTask={conflictData.local}
+          serverTask={conflictData.server}
+          onResolve={handleConflictResolve}
+          onClose={() => {
+            setShowConflictModal(false);
+            setConflictData(null);
+            handleCloseModal();
+          }}
+        />
+      )}
     </div>
   );
 };
