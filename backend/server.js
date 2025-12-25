@@ -2,155 +2,117 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { createServer } from 'http';
 import cors from 'cors';
-import path from 'path';
 import dotenv from 'dotenv';
+import path from 'path';
 import { initializeSocket, getOnlineUsers } from './sockets/socket.js';
 
 // Routes
 import authRoutes from './routes/auth.routes.js';
 import taskRoutes from './routes/task.routes.js';
 import userRoutes from './routes/user.routes.js';
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
-// Create HTTP server explicitly for Socket.IO
+// HTTP server for socket.io
 const server = createServer(app);
 
-// Enhanced CORS configuration
-const corsOptions = {
-  origin: [
-    'https://task-manager-portal-zxpw.vercel.app/',
-    'http://localhost:3000', // For local development
-    'http://localhost:5173'  // For Vite dev server
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
-  exposedHeaders: ['Authorization'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-};
+/* ===========================
+   ✅ CORS CONFIG (ONLY HERE)
+=========================== */
+const allowedOrigins = [
+  'https://task-manager-portal-zxpw.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow server-to-server & Postman
+      if (!origin) return callback(null, true);
 
-// Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-// Add manual CORS headers as fallback
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://task-manager-portal-zxpw.vercel.app/',
-    'https://todo-board-1.vercel.app',
-    'https://todoboard-1-nvnk.onrender.com',
-    'https://taskmanagerportal-5xlp.onrender.com/'
-    
-  ];
-  
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-  
-  next();
-});
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
+// Preflight
+app.options('*', cors());
+
+/* ===========================
+   MIDDLEWARES
+=========================== */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize Socket.IO and get the io instance
-const io = initializeSocket(server);
+/* ===========================
+   SOCKET.IO
+=========================== */
+initializeSocket(server);
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  retryWrites: true,
-  w: 'majority'
-})
-.then(() => console.log('✅ MongoDB connected successfully'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+/* ===========================
+   DATABASE
+=========================== */
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.error('❌ MongoDB error:', err));
 
-// API Routes
+/* ===========================
+   ROUTES
+=========================== */
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 
-// Health check endpoint
+/* ===========================
+   HEALTH CHECK
+=========================== */
 app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    database: dbStatus,
-    onlineUsers: getOnlineUsers().length
+  res.json({
+    status: 'OK',
+    environment: process.env.NODE_ENV,
+    database:
+      mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    onlineUsers: getOnlineUsers().length,
   });
 });
 
-// Serve static files in production
+/* ===========================
+   PRODUCTION BUILD (OPTIONAL)
+=========================== */
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/dist')));
-
-  // Handle SPA
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
-  });
+  app.get('*', (_, res) =>
+    res.sendFile(path.join(__dirname, 'client/dist/index.html'))
+  );
 }
 
-// Error handling middleware
+/* ===========================
+   ERROR HANDLER
+=========================== */
 app.use((err, req, res, next) => {
-  console.error('🚨 Error:', err.stack);
-  
-  const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Something went wrong!'
-    : err.message;
-  
-  res.status(statusCode).json({
+  console.error(err);
+  res.status(500).json({
     success: false,
-    message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    message: err.message || 'Internal server error',
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
-});
-
-// Start server
+/* ===========================
+   START SERVER
+=========================== */
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔌 Socket.IO: Active`);
-  console.log(`🌐 CORS enabled for: https://todo-board-1.vercel.app`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('🚨 Unhandled Rejection:', err);
-  server.close(() => process.exit(1));
 });

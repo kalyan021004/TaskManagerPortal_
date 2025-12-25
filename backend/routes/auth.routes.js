@@ -1,70 +1,61 @@
 import express from 'express';
-const router = express.Router();
 import User from '../models/user.models.js';
 import { authenticate } from '../middleware/auth.js';
 import { generateToken } from '../utils/jwt.js';
 
-// Add CORS middleware specifically for these routes
-router.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://task-manager-portal-zxpw.vercel.app/');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  next();
-});
+const router = express.Router();
 
-// Handle OPTIONS requests (preflight)
-router.options('*', (req, res) => {
-  res.sendStatus(200);
-});
-
-// Register
+/* ===========================
+   REGISTER
+=========================== */
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Check if user with same email exists
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required',
+      });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: 'User already exists',
       });
     }
 
-    // Create and save new user
-    const newUser = new User({ username, email, password });
-    await newUser.save();
+    const user = await User.create({
+      username,
+      email,
+      password,
+    });
 
-    const token = generateToken(newUser._id);
+    const token = generateToken(user._id);
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
       user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-        createdAt: newUser.createdAt
-      }
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
     });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors
-      });
-    }
+  } catch (err) {
     res.status(500).json({
       success: false,
-      message: 'Server error during registration'
+      message: 'Registration failed',
     });
   }
 });
 
-// Login - with explicit CORS headers
+/* ===========================
+   LOGIN
+=========================== */
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -72,31 +63,20 @@ router.post('/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: 'Email and password are required',
       });
     }
 
     const user = await User.findOne({ email }).select('+password');
-    if (!user) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials',
       });
     }
 
     const token = generateToken(user._id);
-    
-    // Explicitly set headers for login response
-    res.header('Access-Control-Allow-Origin', 'https://task-manager-portal-zxpw.vercel.app/');
-    res.header('Access-Control-Allow-Credentials', 'true');
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -105,30 +85,33 @@ router.post('/login', async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        createdAt: user.createdAt
-      }
+      },
     });
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: 'Login failed',
     });
   }
 });
 
-// Profile (Protected)
-router.get('/profile', authenticate, async (req, res) => {
+/* ===========================
+   PROFILE
+=========================== */
+router.get('/profile', authenticate, (req, res) => {
   res.json({
     success: true,
-    user: req.user
+    user: req.user,
   });
 });
 
-// Logout (just client-side token discard)
+/* ===========================
+   LOGOUT
+=========================== */
 router.post('/logout', authenticate, (req, res) => {
   res.json({
     success: true,
-    message: 'Logged out successfully'
+    message: 'Logged out successfully',
   });
 });
 
