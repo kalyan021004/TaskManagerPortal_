@@ -51,7 +51,8 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'https://task-manager-portal-zxpw.vercel.app/',
     'https://todo-board-1.vercel.app',
-    'https://todoboard-1-nvnk.onrender.com'
+    'https://todoboard-1-nvnk.onrender.com',
+    'https://taskmanagerportal-5xlp.onrender.com/'
     
   ];
   
