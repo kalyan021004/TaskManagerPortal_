@@ -520,11 +520,7 @@ const KanbanBoard = () => {
 
   <div className="header-actions">
 
-    <OnlineUsers
-      users={onlineUsers}
-      typingUsers={typingUsers}
-      allUsers={users}
-    />
+   
 
     <button
       className={`btn btn-secondary ${showActivityPanel ? 'active' : ''}`}
@@ -539,6 +535,11 @@ const KanbanBoard = () => {
     >
       + Task
     </button>
+     <OnlineUsers
+      users={onlineUsers}
+      typingUsers={typingUsers}
+      allUsers={users}
+    />
 
     <button
       className="btn btn-danger-outline"
