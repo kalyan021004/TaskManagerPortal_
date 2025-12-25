@@ -1,4 +1,8 @@
 /* OnlineUsers.css */
+.online-users {
+  position: relative;
+  z-index: 9999; /* higher than filter bar */
+}
 
 .online-users {
   position: relative;
@@ -75,20 +79,16 @@
 /* Dropdown Panel */
 .online-users-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 10px);
   right: 0;
   width: 320px;
   max-height: 500px;
-  background-color: rgb(36, 16, 16);
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  background: #0f172a;
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   overflow: hidden;
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  z-index: 1000;
-  border: 1px solid #e9ecef;
-  
+  z-index: 10000; /* 🔥 VERY IMPORTANT */
 }
 
 .online-users-header {

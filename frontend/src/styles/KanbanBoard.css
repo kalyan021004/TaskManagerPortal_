@@ -29,6 +29,13 @@ body {
   max-width: 100%;
   overflow-x: hidden;
 }
+.kanban-header,
+.filter-bar,
+.kanban-main-content,
+.kanban-board-section {
+  overflow: visible !important;
+}
+
 
 .kanban-header {
   display: flex;
