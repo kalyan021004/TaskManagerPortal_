@@ -7,7 +7,7 @@ const userSchema = new Schema(
         username: {
             type: String,
             required: true,
-            unique: true,
+            
             trim: true,
             minlength: [3, 'Username must be minimum 3characters long'],
             maxlength: [30, 'Username must be minimum 3characters long']
