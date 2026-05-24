@@ -1,0 +1,258 @@
+/* ================= FILTER BAR ================= */
+
+.filter-bar {
+  background: #2b3548;
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin: 18px 28px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  position: relative;
+  z-index: 10;
+}
+
+/* ================= TOP ROW ================= */
+
+.filter-top {
+  display: grid;
+  grid-template-columns: 260px auto auto auto;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ================= SEARCH ================= */
+
+.search-box {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  border-radius: 10px;
+  border: none;
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 14px;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* ================= FILTERS ================= */
+
+.filter-section {
+  display: flex;
+  gap: 16px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group label {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 14px;
+}
+
+/* ================= SORT ================= */
+
+.sort-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sort-label {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.sort-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.sort-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.sort-btn.active {
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  color: white;
+}
+
+.sort-indicator {
+  margin-left: 6px;
+}
+
+/* ================= STATS ================= */
+
+.task-stats {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+}
+
+.stat-item {
+  background: rgba(255,255,255,0.06);
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 70px;
+}
+
+.stat-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* ================= BOTTOM ================= */
+
+.filter-bottom {
+  margin-top: 14px;
+}
+
+.clear-filters-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(248,113,113,0.5);
+  color: #f87171;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.clear-filters-btn:hover {
+  background: rgba(248,113,113,0.1);
+}
+@media (max-width: 768px) {
+
+  .filter-bar {
+    margin: 12px;
+    padding: 14px;
+  }
+
+  /* Stack everything */
+  .filter-top {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Search full width */
+  .search-input {
+    width: 100%;
+  }
+
+  /* Filters stacked */
+  .filter-section {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  /* Sort buttons → horizontal scroll */
+  .sort-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .sort-buttons {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .sort-buttons::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Stats → swipeable row */
+  .task-stats {
+    width: 100%;
+    overflow-x: auto;
+    gap: 10px;
+  }
+
+  .stat-item {
+    min-width: 80px;
+  }
+
+  /* Clear button full width */
+  .clear-filters-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+@media (max-width: 480px) {
+
+  .board-title {
+    font-size: 20px;
+  }
+
+  .search-input {
+    font-size: 13px;
+    padding: 9px 12px 9px 34px;
+  }
+
+  .filter-group label {
+    font-size: 10px;
+  }
+
+  .sort-btn {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+
+  .stat-number {
+    font-size: 16px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+}
+
+
