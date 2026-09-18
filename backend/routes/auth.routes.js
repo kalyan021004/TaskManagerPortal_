@@ -57,45 +57,96 @@ router.post('/register', async (req, res) => {
 /* ===========================
    LOGIN
 =========================== */
-router.post('/login', async (req, res) => {
+router.post('/google', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { token } = req.body;
 
-    if (!email || !password) {
+    if (!token) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required',
+        message: 'Firebase token required',
       });
     }
 
-    const user = await User.findOne({ email }).select('+password');
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({
+    // Verify Firebase token
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    const {
+      email,
+      name,
+      picture,
+      uid
+    } = decoded;
+
+    console.log('Google user:', {
+      uid,
+      email,
+      name,
+      picture
+    });
+
+    if (!email) {
+      return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Email not available',
       });
     }
 
-    const token = generateToken(user._id);
+    // Find existing user
+    let user = await User.findOne({ email });
+
+    if (!user) {
+
+      // Create new user
+      user = await User.create({
+        username: name || email.split('@')[0],
+        email: email,
+        password: Math.random().toString(36),
+        avatar: picture || '',
+        firebaseUid: uid
+      });
+
+      console.log('✅ New Google user created');
+    } 
+    
+    else {
+
+      // Update Google user's information
+      user.username = name || user.username;
+      user.avatar = picture || user.avatar;
+      user.firebaseUid = uid;
+
+      await user.save();
+
+      console.log('✅ Existing user updated');
+    }
+
+    const jwtToken = generateToken(user._id);
 
     res.json({
       success: true,
-      message: 'Login successful',
-      token,
+      message: 'Google login successful',
+
+      token: jwtToken,
+
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
-      },
+        avatar: user.avatar
+      }
     });
+
   } catch (err) {
+
+    console.error('Google authentication error:', err);
+
     res.status(500).json({
       success: false,
-      message: 'Login failed',
+      message: 'Google authentication failed'
     });
   }
 });
-
 /* ===========================
    PROFILE
 =========================== */
