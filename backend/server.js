@@ -92,11 +92,18 @@ app.get('/api/health', (req, res) => {
 /* ===========================
    PRODUCTION BUILD (OPTIONAL)
 =========================== */
+// ===========================
+// PRODUCTION BUILD
+// ===========================
+
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  app.get('*', (_, res) =>
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'))
-  );
+  app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+
+  app.get('*', (_, res) => {
+    res.sendFile(
+      path.join(__dirname, 'frontend', 'dist', 'index.html')
+    );
+  });
 }
 
 /* ===========================
